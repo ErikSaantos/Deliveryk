@@ -1,0 +1,8 @@
+fastapi=0.128.0
+uvicorn=0.39.0
+sqlalchemy=2.0.45
+python-dotenv=1.2.1
+python-multipart=0.0.20
+# passlib[bcrypt]=
+# python-jose[cryptography]
+sqlalchemy_utils=0.42.1
