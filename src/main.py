@@ -4,8 +4,17 @@
 # main precisa dos arquivos de rotas e arquivos de rotas precisam do main
 
 from fastapi import FastAPI
+from passlib.context import CryptContext
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY") #Cryptography
 
 app = FastAPI()
+
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 from routes.auth_routes import auth_router #router -> Roteador
 from routes.order_routes import order_router

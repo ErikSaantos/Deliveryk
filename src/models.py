@@ -1,9 +1,15 @@
 from sqlalchemy import create_engine, Column, String, Integer, Boolean, Float, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import declarative_base
 from enum import Enum
+import os
 
 # Cria a conexão com o banco
-db = create_engine("sqlite:///database/banco.db")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'database', 'db.db')}"
+db = create_engine(
+    DATABASE_URL, 
+    connect_args={"check_same_thread": False}
+)
 
 # Cria a base do banco
 Base = declarative_base()
@@ -49,7 +55,7 @@ class Pedido(Base):
     preco = Column("preco", Float)
     # itens = 
 
-    def __init__(self, usuario, status="PENDENTE", preco=0):
+    def __init__(self, usuario, status=StatusPedido.PENDENTE, preco=0):
         self.usuario = usuario
         self.status = status
         self.preco = preco

@@ -3,7 +3,8 @@ uvicorn=0.39.0
 sqlalchemy=2.0.45
 python-dotenv=1.2.1
 python-multipart=0.0.20
-# passlib[bcrypt]=
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
 # python-jose[cryptography]
 sqlalchemy_utils=0.42.1
 alembic=1.16.5
