@@ -3,7 +3,7 @@ from models import Usuario
 from dependencies import pegar_sessao
 from main import bcrypt_context
 from sqlalchemy.orm import Session
-from schemas import UsuarioSchema
+from schemas import UsuarioSchema, LoginSchema
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,3 +31,4 @@ async def criar_conta(
     session.add(novo_usuario)
     session.commit()
     return { "msg": f"Usuário cadastrado com sucesso! {usuario_schema.email}"}
+

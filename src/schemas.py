@@ -11,3 +11,13 @@ class UsuarioSchema(BaseModel):
 
     class Config:
         from_attributes = True #Interpretado como uma classe, e nao um dict
+
+
+class PedidoSchema(BaseModel):
+    #Fazer pegar o email e apartir daí, pegar o id
+    id_usuario: int
+
+    class Config:
+        from_attributes = True
+
+
