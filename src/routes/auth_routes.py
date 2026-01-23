@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from models import Usuario
 from dependencies import pegar_sessao, verificar_token
 from main import bcrypt_context, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -7,13 +8,27 @@ from schemas import UsuarioSchema, LoginSchema
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 
+# Cria um roteador com o prefixo padrão e tag de separação
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def criar_token(id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
+def criar_token(
+    id_usuario, 
+    duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+):
+    """
+    Recebe o ID do usuário e duração do token:
+        Access Token tem 30 minutos -> valor default com timedelta;
+        Refresh Token tem 7 dias -> valor passado como parâmetro na chamada da função.
+    
+    Calcula data de expiração;
+    Armazena em um dicionario o identificador (subject) e expiration time (exp);
+    jwt.encode codifica o dicionario, usando chave secreta como referência e algoritmo de codificação.
+    """
+
     data_expiracao = datetime.now(timezone.utc)+ duracao_token
     dic_info = {"sub": str(id_usuario), "exp": data_expiracao}
-    jwt_codificado = jwt.encode(dic_info, SECRET_KEY, ALGORITHM) # (dicionario de informacoes, chave secreta como referencia, algoritmo de codificação)
+    jwt_codificado = jwt.encode(dic_info, SECRET_KEY, ALGORITHM)
     return jwt_codificado
 
 
@@ -34,7 +49,7 @@ async def home():
     return {"msg": "Acessou a rota de autenticação", "autenticado": True}
 
 
-@auth_router.post('/criar_conta')
+@auth_router.post('/criar-conta')
 async def criar_conta(
     usuario_schema: UsuarioSchema, 
     session: Session = Depends(pegar_sessao)
@@ -52,7 +67,7 @@ async def criar_conta(
     return { "msg": f"Usuário cadastrado com sucesso! {usuario_schema.email}"}
 
 
-# Login via Token -> JWT Bearer
+# Login via Token -> email, senha -> JWT Bearer
 @auth_router.post("/login")
 async def login(
     login_schema: LoginSchema, 
@@ -68,9 +83,31 @@ async def login(
     access_token = criar_token(usuario.id) # 30min, usa pra fazer requisições
     refresh_token = criar_token(usuario.id, duracao_token=timedelta(days=7)) # 7 dias, usa pra criar outro access token
     return {
-        "access-token": access_token,
-        "refresh-token": refresh_token,
-        "token-type": "Bearer"
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "Bearer"
+    }
+    #quando usuario faz requisicao, tem que passar o token pelos headers ˆˆˆ
+    # headers = {"Access-Token": "Bearer-Token"}
+
+
+@auth_router.post("/login-form") # Feito via formulário "Authorization" no swagger
+async def login_form(
+    dados_forms: OAuth2PasswordRequestForm = Depends(), #headers, preenchida no formulario authorize (/docs)
+    session: Session = Depends(pegar_sessao)
+):
+    """
+    Rota de login do usuário onde retorna um token de 30 minutos.
+    Usa a função de autenticar usuário (procura no banco). Se não achar devolve um code=400, mas se achar cria e devolve um Token Bearer de 30 minutos
+    """
+    usuario = autenticar_usuario(dados_forms.username, dados_forms.password, session)
+    if not usuario:
+        raise HTTPException(status_code=400, detail="Usuário não encontrado ou credenciais inválidas")
+    
+    access_token = criar_token(usuario.id) # 30min, usa pra fazer requisições
+    return {
+        "access_token": access_token,
+        "token_type": "Bearer"
     }
     #quando usuario faz requisicao, tem que passar o token pelos headers ˆˆˆ
     #headers = {"Access-Token": "Bearer-Token"}
@@ -85,6 +122,6 @@ async def use_refresh_token(
     """
     access_token = criar_token(usuario.id)
     return {
-        "access-token": access_token,
-        "token-type": "Bearer"
+        "access_token": access_token,
+        "token_type": "Bearer"
     }
